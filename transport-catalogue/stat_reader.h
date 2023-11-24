@@ -7,7 +7,7 @@
 
 namespace transport {
 
-    void PrintRoute(const TransportCatalogue& transport_catalogue, const TransportCatalogue::Route& r);
-    void PrintStop(const TransportCatalogue& transport_catalogue, const std::string& stop_name);
-    void ProcessRequest(const TransportCatalogue& transport_catalogue);
+    void PrintRoute(ostream& out, const TransportCatalogue& transport_catalogue, const TransportCatalogue::Route& r);
+    void PrintStop(ostream& out, const TransportCatalogue& transport_catalogue, const std::string& stop_name);
+    void ProcessRequest(istream& input, ostream& out, const TransportCatalogue& transport_catalogue);
 }

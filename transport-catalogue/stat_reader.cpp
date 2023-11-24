@@ -6,21 +6,21 @@
 
 namespace transport {
 
-	void PrintRoute(const TransportCatalogue& transport_catalogue, const std::string& route_name) {
+	void PrintRoute(ostream& out, const TransportCatalogue& transport_catalogue, const std::string& route_name) {
 		try {
 			const auto& r = transport_catalogue.FindRoute(route_name);
-			std::cout << "Bus " << r.name << ": "
+			out << "Bus " << r.name << ": "
 				<< std::fixed << std::setprecision(5) << r.GetStopsOnRoute() << " stops on route, "
 				<< r.CountUniqueStops() << " unique stops, "
 				<< transport_catalogue.ComputeRouteLength(r) << " route length, "
 				<< transport_catalogue.ComputeCurvature(r) << " curvature" << std::endl;
 		}
 		catch (std::out_of_range& e) {
-			std::cout << "Bus " << route_name << ": " << "not found"s << std::endl;
+			out << "Bus " << route_name << ": " << "not found"s << std::endl;
 		}
 	}
 
-	void PrintStop(const TransportCatalogue& transport_catalogue, const std::string& stop_name) {
+	void PrintStop(ostream& out, const TransportCatalogue& transport_catalogue, const std::string& stop_name) {
 		std::stringstream result;
 		result << "Stop " << stop_name << ": ";
 		try {
@@ -38,25 +38,25 @@ namespace transport {
 		catch (std::out_of_range& e) {
 			result << "not found";
 		}
-		std::cout << result.str() << std::endl;
+		out << result.str() << std::endl;
 	}
 
-	void ProcessRequest(const TransportCatalogue& transport_catalogue) {
+	void ProcessRequest(istream& input, ostream& out, const TransportCatalogue& transport_catalogue) {
 		int N;
-		std::cin >> N;
+		input >> N;
 		std::string request;
-		std::getline(std::cin, request);
+		std::getline(input, request);
 
 		for (int i = 0; i < N; i++) {
-			std::getline(std::cin, request);
+			std::getline(input, request);
 			std::string command = request.substr(0, request.find(' '));
 			if (command == "Bus") {
 				const std::string& route_name = request.substr(request.find(' ') + 1);
-				PrintRoute(transport_catalogue, route_name);
+				PrintRoute(out, transport_catalogue, route_name);
 			}
 			else if (command == "Stop") {
 				const std::string& stop_name = request.substr(request.find(' ') + 1);
-				PrintStop(transport_catalogue, stop_name);
+				PrintStop(out, transport_catalogue, stop_name);
 			}
 		}
 	}

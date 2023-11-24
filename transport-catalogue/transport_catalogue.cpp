@@ -50,24 +50,29 @@ namespace transport {
         return length;
     }
 
-    void TransportCatalogue::AddRoute(Route r) {
-        for (std::string_view& stop_name : r.stops) {
+    void TransportCatalogue::AddRoute(const Route& r) {
+        routes_.push_back(r);
+        for (std::string_view& stop_name : routes_.back().stops) {
             stop_name = name_to_stop_[std::string(stop_name)].name;
         }
         for (std::string_view stop : r.stops) {
             stop_buses_[std::string(stop)].insert(r.name);
         }
-        routes_.push_back(r);
     }
 
-    void TransportCatalogue::AddStop(Stop s) {
+    void TransportCatalogue::AddStop(const Stop& s) {
         name_to_stop_[s.name].name = s.name;
         name_to_stop_[s.name].coordinates = s.coordinates;
-        s.stop_to_distance.insert(name_to_stop_[s.name].stop_to_distance.begin(), name_to_stop_[s.name].stop_to_distance.end());
-        name_to_stop_[s.name].stop_to_distance = s.stop_to_distance;
-        for (const std::pair<std::string, int>& distance_to_stop : s.stop_to_distance) {
-            if (name_to_stop_[distance_to_stop.first].stop_to_distance.find(s.name) == name_to_stop_[distance_to_stop.first].stop_to_distance.end()) {
-                name_to_stop_[distance_to_stop.first].stop_to_distance[s.name] = distance_to_stop.second;
+
+        // add distance from stop s to other stops
+        for(const auto& [stop_name, distance]: s.stop_to_distance) {
+            name_to_stop_[s.name].stop_to_distance[stop_name] = distance;
+        }
+
+        // add distance from other stops to stop s
+        for (const auto& [stop_name, distance] : s.stop_to_distance) {
+            if (name_to_stop_[stop_name].stop_to_distance.find(s.name) == name_to_stop_[stop_name].stop_to_distance.end()) {
+                name_to_stop_[stop_name].stop_to_distance[s.name] = distance;
             }
         }
     }

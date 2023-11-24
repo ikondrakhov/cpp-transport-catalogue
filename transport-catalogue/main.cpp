@@ -9,6 +9,6 @@
 int main() {
     transport::TransportCatalogue transport_catalogue;
     transport::ReadCatalogue(std::cin, transport_catalogue);
-    transport::ProcessRequest(transport_catalogue);
+    transport::ProcessRequest(std::cin, std::cout, transport_catalogue);
     return 0;
 }

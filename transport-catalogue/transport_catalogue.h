@@ -39,9 +39,9 @@ namespace transport {
         std::map<std::string, std::set<std::string>> stop_buses_;
 
     public:
-        void AddRoute(Route r);
+        void AddRoute(const Route& r);
 
-        void AddStop(Stop s);
+        void AddStop(const Stop& s);
 
         const Route& FindRoute(const std::string_view route_name) const;
 
