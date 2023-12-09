@@ -11,31 +11,16 @@
 #include <string_view>
 
 #include "geo.h"
+#include "domain.h"
 
 namespace transport {
 
     using namespace std;
 
     class TransportCatalogue {
-    public:
-        struct Route {
-            std::string name;
-            std::deque<std::string_view> stops;
-
-            int CountUniqueStops() const;
-
-            int GetStopsOnRoute() const;
-        };
-
-        struct Stop {
-            std::string name;
-            Coordinates coordinates;
-            std::map<std::string, int> stop_to_distance;
-        };
-
     private:
         std::map<std::string, Stop> name_to_stop_;
-        std::vector<Route> routes_;
+        std::set<Route> routes_;
         std::map<std::string, std::set<std::string>> stop_buses_;
 
     public:
@@ -51,5 +36,7 @@ namespace transport {
 
         float ComputeCurvature(const Route& r) const;
         int ComputeRouteLength(const Route& r) const;
+
+        const std::set<Route>& GetRouteList() const;
     };
 }

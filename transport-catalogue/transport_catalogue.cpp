@@ -16,19 +16,6 @@ namespace transport {
 
     using namespace std;
 
-
-    int TransportCatalogue::Route::CountUniqueStops() const {
-        std::set<std::string_view, std::less<>> unique_stops;
-        for (const std::string_view stop : stops) {
-            unique_stops.insert(stop);
-        }
-        return unique_stops.size();
-    }
-
-    int TransportCatalogue::Route::GetStopsOnRoute() const {
-        return stops.size();
-    }
-
     float TransportCatalogue::ComputeCurvature(const Route& r) const {
         float distance = 0;
         Coordinates previouse_coordinates = FindStop(std::string(r.stops[0])).coordinates;
@@ -44,19 +31,16 @@ namespace transport {
 
     int TransportCatalogue::ComputeRouteLength(const Route& r) const {
         int length = 0;
-        for (int i = 0; i < r.stops.size() - 1; i++) {
+        for (size_t i = 0; i < r.stops.size() - 1; i++) {
             length += FindStop(std::string(r.stops[i])).stop_to_distance.at(std::string(r.stops[i + 1]));
         }
         return length;
     }
 
     void TransportCatalogue::AddRoute(const Route& r) {
-        routes_.push_back(r);
-        for (std::string_view& stop_name : routes_.back().stops) {
-            stop_name = name_to_stop_[std::string(stop_name)].name;
-        }
-        for (std::string_view stop : r.stops) {
-            stop_buses_[std::string(stop)].insert(r.name);
+        routes_.insert(r);
+        for (const std::string& stop : r.stops) {
+            stop_buses_[stop].insert(r.name);
         }
     }
 
@@ -65,7 +49,7 @@ namespace transport {
         name_to_stop_[s.name].coordinates = s.coordinates;
 
         // add distance from stop s to other stops
-        for(const auto& [stop_name, distance]: s.stop_to_distance) {
+        for (const auto& [stop_name, distance] : s.stop_to_distance) {
             name_to_stop_[s.name].stop_to_distance[stop_name] = distance;
         }
 
@@ -77,7 +61,7 @@ namespace transport {
         }
     }
 
-    const TransportCatalogue::Route& TransportCatalogue::FindRoute(const std::string_view route_name) const {
+    const Route& TransportCatalogue::FindRoute(const std::string_view route_name) const {
         const auto& r = find_if(routes_.begin(), routes_.end(),
             [&route_name](const Route& r) {
                 return r.name == route_name;
@@ -88,7 +72,7 @@ namespace transport {
         return *r;
     }
 
-    const TransportCatalogue::Stop& TransportCatalogue::FindStop(const std::string& stop_name) const {
+    const Stop& TransportCatalogue::FindStop(const std::string& stop_name) const {
         if (name_to_stop_.find(stop_name) == name_to_stop_.end()) {
             throw std::out_of_range("No stop with name "s + stop_name + " exists"s);
         }
@@ -100,5 +84,9 @@ namespace transport {
             return {};
         }
         return stop_buses_.at(stop_name);
+    }
+
+    const std::set<Route>& TransportCatalogue::GetRouteList() const {
+        return routes_;
     }
 }
