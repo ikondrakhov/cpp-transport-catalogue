@@ -7,6 +7,7 @@
 
 int main() {
     transport::TransportCatalogue transport_catalogue;
-    ProcessRequests(std::cin, std::cout, transport_catalogue);
+    JSONReader reader;
+    reader.ProcessRequests(std::cin, std::cout, transport_catalogue);
     return 0;
 }
