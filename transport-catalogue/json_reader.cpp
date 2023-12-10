@@ -24,10 +24,10 @@ svg::Color JSONReader::GetColor(json::Node color) {
 
 void JSONReader::AddStopsToCatalogue(const json::Array& base_requests, transport::TransportCatalogue& catalogue) {
     for (const auto& r : base_requests) {
-        const auto& request = r.AsMap();
+        const auto& request = r.AsDict();
         if (request.at("type").AsString() == "Stop") {
             std::map<std::string, int> stop_to_distance;
-            for (const auto& [street_name, distance] : request.at("road_distances").AsMap()) {
+            for (const auto& [street_name, distance] : request.at("road_distances").AsDict()) {
                 stop_to_distance[street_name] = distance.AsInt();
             }
             catalogue.AddStop({ request.at("name").AsString(),
@@ -39,7 +39,7 @@ void JSONReader::AddStopsToCatalogue(const json::Array& base_requests, transport
 
 void JSONReader::AddRoutesToCatalogue(const json::Array& base_requests, transport::TransportCatalogue& catalogue) {
     for (const auto& r : base_requests) {
-        const auto& request = r.AsMap();
+        const auto& request = r.AsDict();
         if (request.at("type").AsString() == "Bus") {
             std::deque<std::string> stops;
             for (const auto& stop : request.at("stops").AsArray()) {
@@ -59,27 +59,27 @@ void JSONReader::AddRoutesToCatalogue(const json::Array& base_requests, transpor
 
 RenderSettings JSONReader::ProcessRenderSettings(const json::Node& render_settings) {
     std::vector<svg::Color> color_palette;
-    for(const auto& color: render_settings.AsMap().at("color_palette").AsArray()) {
+    for(const auto& color: render_settings.AsDict().at("color_palette").AsArray()) {
         color_palette.push_back(GetColor(color));
     }
     return {
-        render_settings.AsMap().at("width").AsDouble(),
-        render_settings.AsMap().at("height").AsDouble(),
-        render_settings.AsMap().at("padding").AsDouble(),
-        render_settings.AsMap().at("line_width").AsDouble(),
-        render_settings.AsMap().at("stop_radius").AsDouble(),
-        render_settings.AsMap().at("bus_label_font_size").AsInt(),
+        render_settings.AsDict().at("width").AsDouble(),
+        render_settings.AsDict().at("height").AsDouble(),
+        render_settings.AsDict().at("padding").AsDouble(),
+        render_settings.AsDict().at("line_width").AsDouble(),
+        render_settings.AsDict().at("stop_radius").AsDouble(),
+        render_settings.AsDict().at("bus_label_font_size").AsInt(),
         { 
-            render_settings.AsMap().at("bus_label_offset").AsArray()[0].AsDouble(),
-            render_settings.AsMap().at("bus_label_offset").AsArray()[1].AsDouble() 
+            render_settings.AsDict().at("bus_label_offset").AsArray()[0].AsDouble(),
+            render_settings.AsDict().at("bus_label_offset").AsArray()[1].AsDouble() 
         },
-        render_settings.AsMap().at("stop_label_font_size").AsInt(),
+        render_settings.AsDict().at("stop_label_font_size").AsInt(),
         { 
-            render_settings.AsMap().at("stop_label_offset").AsArray()[0].AsDouble(),
-            render_settings.AsMap().at("stop_label_offset").AsArray()[1].AsDouble() 
+            render_settings.AsDict().at("stop_label_offset").AsArray()[0].AsDouble(),
+            render_settings.AsDict().at("stop_label_offset").AsArray()[1].AsDouble() 
         },
-        GetColor(render_settings.AsMap().at("underlayer_color")),
-        render_settings.AsMap().at("underlayer_width").AsDouble(),
+        GetColor(render_settings.AsDict().at("underlayer_color")),
+        render_settings.AsDict().at("underlayer_width").AsDouble(),
         color_palette
     };
 }
@@ -90,15 +90,15 @@ std::vector<json::Node> JSONReader::ProcessStatRequests(const json::Array& stat_
     std::vector<json::Node> responses;
 
     for (const auto& request : stat_requests) {
-        const std::string& type = request.AsMap().at("type").AsString();
-        int request_id = request.AsMap().at("id").AsInt();
+        const std::string& type = request.AsDict().at("type").AsString();
+        int request_id = request.AsDict().at("id").AsInt();
         std::optional<json::Dict> result = json::Dict{};
 
         if (type == "Bus") {
-            result = request_handler.GetBusStat(request.AsMap().at("name").AsString());
+            result = request_handler.GetBusStat(request.AsDict().at("name").AsString());
         }
         else if (type == "Stop") {
-            result = request_handler.GetBusesByStop(request.AsMap().at("name").AsString());
+            result = request_handler.GetBusesByStop(request.AsDict().at("name").AsString());
         }
         else if (type == "Map") {
             std::ostringstream result_map;
@@ -118,11 +118,11 @@ std::vector<json::Node> JSONReader::ProcessStatRequests(const json::Array& stat_
 void JSONReader::ProcessRequests(std::istream& input, std::ostream& output, transport::TransportCatalogue& catalogue) {
     json::Node requests = json::Load(input).GetRoot();
 
-    AddStopsToCatalogue(requests.AsMap().at("base_requests").AsArray(), catalogue);
-    AddRoutesToCatalogue(requests.AsMap().at("base_requests").AsArray(), catalogue);
+    AddStopsToCatalogue(requests.AsDict().at("base_requests").AsArray(), catalogue);
+    AddRoutesToCatalogue(requests.AsDict().at("base_requests").AsArray(), catalogue);
 
-    renderer::MapRenderer renderer {ProcessRenderSettings(requests.AsMap().at("render_settings"))};
-    std::vector<json::Node> responses = ProcessStatRequests(requests.AsMap().at("stat_requests").AsArray(), catalogue, renderer);
+    renderer::MapRenderer renderer {ProcessRenderSettings(requests.AsDict().at("render_settings"))};
+    std::vector<json::Node> responses = ProcessStatRequests(requests.AsDict().at("stat_requests").AsArray(), catalogue, renderer);
 
     json::Print(json::Document(responses), output);
 }
