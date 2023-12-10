@@ -2,13 +2,14 @@
 
 #include "geo.h"
 #include "svg.h"
-#include "json.h"
+#include "domain.h"
 
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <optional>
 #include <vector>
+#include <set>
 
 inline const double EPSILON = 1e-6;
 bool IsZero(double value);
@@ -23,9 +24,9 @@ struct RenderSettings {
     svg::Point bus_label_offset;
     int stop_label_font_size;
     svg::Point stop_label_offset;
-    json::Node underlayer_color;
+    svg::Color underlayer_color;
     double underlayer_width;
-    std::vector<json::Node> color_palette;
+    std::vector<svg::Color> color_palette;
 };
 
 class SphereProjector {
@@ -98,7 +99,14 @@ private:
 };
 
 namespace renderer {
-    struct MapRenderer {
+    class MapRenderer {
+    public:
+        MapRenderer(RenderSettings rs): render_settings(rs) {}
+
+        svg::Document RenderMap(const std::set<transport::Route>& routes, 
+                                const std::map<std::string_view, Coordinates>& stop_coordinates) const;
+    
+    private:
         RenderSettings render_settings;
     };
 }

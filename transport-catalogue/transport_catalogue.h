@@ -38,5 +38,6 @@ namespace transport {
         int ComputeRouteLength(const Route& r) const;
 
         const std::set<Route>& GetRouteList() const;
+        std::map<std::string_view, Coordinates> GetStopsCoordinates() const;
     };
 }

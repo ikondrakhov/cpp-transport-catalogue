@@ -89,4 +89,13 @@ namespace transport {
     const std::set<Route>& TransportCatalogue::GetRouteList() const {
         return routes_;
     }
+
+    
+    std::map<std::string_view, Coordinates> TransportCatalogue::GetStopsCoordinates() const {
+        std::map<std::string_view, Coordinates> stop_coordiantes;
+        for(const auto& [stop_name, stop]: name_to_stop_) {
+            stop_coordiantes[stop_name] = stop.coordinates;
+        }
+        return stop_coordiantes;
+    }
 }

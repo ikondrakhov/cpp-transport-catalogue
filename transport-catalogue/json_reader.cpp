@@ -8,26 +8,18 @@
 
 using namespace std;
 
-
-std::string ColorToString(json::Node color) {
-    std::ostringstream str;
-    if (color.IsString()) {
-        str << color.AsString();
-    }
-    else if (color.IsArray()) {
-        if (color.AsArray().size() == 3) {
-            str << "rgb(" + std::to_string(color.AsArray()[0].AsInt()) + ","
-                + std::to_string(color.AsArray()[1].AsInt()) + ","
-                + std::to_string(color.AsArray()[2].AsInt()) + ")";
-        }
-        else if (color.AsArray().size() == 4) {
-            str << "rgba("s << color.AsArray()[0].AsInt() << ","s
-                << color.AsArray()[1].AsInt() << ","s
-                << color.AsArray()[2].AsInt() << ","s
-                << color.AsArray()[3].AsDouble() << ")"s;
+svg::Color GetColor(json::Node color) {
+    if(color.IsString()) {
+        return color.AsString();
+    } else if (color.IsArray()) {
+        if(color.AsArray().size() == 3) {
+            return svg::Rgb(color.AsArray()[0].AsInt(), color.AsArray()[1].AsInt(), color.AsArray()[2].AsInt());
+        } else {
+            return svg::Rgba(color.AsArray()[0].AsInt(), color.AsArray()[1].AsInt(),
+                         color.AsArray()[2].AsInt(), color.AsArray()[3].AsDouble());
         }
     }
-    return str.str();
+    return svg::Color{};
 }
 
 void ProcessRequests(std::istream& input, std::ostream& output, transport::TransportCatalogue& catalogue) {
@@ -65,6 +57,10 @@ void ProcessRequests(std::istream& input, std::ostream& output, transport::Trans
     }
 
     json::Node render_params = requests.AsMap().at("render_settings");
+    std::vector<svg::Color> color_palette;
+    for(const auto& color: render_params.AsMap().at("color_palette").AsArray()) {
+        color_palette.push_back(GetColor(color));
+    }
     RenderSettings render_settings = {
         render_params.AsMap().at("width").AsDouble(),
         render_params.AsMap().at("height").AsDouble(),
@@ -75,9 +71,9 @@ void ProcessRequests(std::istream& input, std::ostream& output, transport::Trans
         { render_params.AsMap().at("bus_label_offset").AsArray()[0].AsDouble(), render_params.AsMap().at("bus_label_offset").AsArray()[1].AsDouble() },
         render_params.AsMap().at("stop_label_font_size").AsInt(),
         { render_params.AsMap().at("stop_label_offset").AsArray()[0].AsDouble(), render_params.AsMap().at("stop_label_offset").AsArray()[1].AsDouble() },
-        render_params.AsMap().at("underlayer_color"),
+        GetColor(render_params.AsMap().at("underlayer_color")),
         render_params.AsMap().at("underlayer_width").AsDouble(),
-        render_params.AsMap().at("color_palette").AsArray()
+        color_palette
     };
 
     std::vector<json::Node> responses;
@@ -98,7 +94,7 @@ void ProcessRequests(std::istream& input, std::ostream& output, transport::Trans
         }
         else if (type == "Map") {
             std::ostringstream result_map;
-            auto map = request_handler.RenderMap();
+            auto map = renderer.RenderMap(catalogue.GetRouteList(), catalogue.GetStopsCoordinates());
             map.Render(result_map);
             result.value()["map"] = result_map.str();
         }
