@@ -16,9 +16,9 @@ private:
     std::vector<json::Node> ProcessStatRequests(const json::Array& stat_requests,
                                                 const transport::TransportCatalogue& catalogue,
                                                 const renderer::MapRenderer& renderer);
-    std::string ColorToString(json::Node color);
     svg::Color GetColor(json::Node color);
     void AddStopsToCatalogue(const json::Array& base_requests, transport::TransportCatalogue& catalogue);
     void AddRoutesToCatalogue(const json::Array& base_requests, transport::TransportCatalogue& catalogue);
+    void AddRoutingSettings(const json::Dict& routing_settings, transport::TransportCatalogue& catalogue);
     RenderSettings ProcessRenderSettings(const json::Node& render_settings);
 };

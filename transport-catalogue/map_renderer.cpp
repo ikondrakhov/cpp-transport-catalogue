@@ -12,9 +12,9 @@ svg::Document renderer::MapRenderer::RenderMap(const std::set<transport::Route>&
     std::set<std::string_view> stops;
     // get stops whitch are used in routes
     for (const auto& route : routes) {
-        for (const auto& stop_name : route.stops) {
-            coordinates.push_back(stop_coordinates.at(stop_name));
-            stops.insert(stop_name);
+        for (const transport::Stop* stop : route.stops) {
+            coordinates.push_back(stop_coordinates.at(stop->name));
+            stops.insert(stop->name);
         }
     }
 
@@ -34,8 +34,8 @@ svg::Document renderer::MapRenderer::RenderMap(const std::set<transport::Route>&
                 .SetStrokeWidth(render_settings.line_width)
                 .SetStrokeLineCap(StrokeLineCap::ROUND)
                 .SetStrokeLineJoin(StrokeLineJoin::ROUND);
-            for (const auto& stop_name : route.stops) {
-                Point p = projector(stop_coordinates.at(stop_name));
+            for (const transport::Stop* stop : route.stops) {
+                Point p = projector(stop_coordinates.at(stop->name));
                 route_line.AddPoint(p);
             }
             map.Add(route_line);
@@ -49,7 +49,7 @@ svg::Document renderer::MapRenderer::RenderMap(const std::set<transport::Route>&
         if (route.stops.size() > 1) {
             Text route_name = Text()
                 .SetFillColor(colors[color_num])
-                .SetPosition(projector(stop_coordinates.at(route.stops[0])))
+                .SetPosition(projector(route.stops[0]->coordinates))
                 .SetOffset(render_settings.bus_label_offset)
                 .SetFontSize(render_settings.bus_label_font_size)
                 .SetFontFamily("Verdana")
@@ -59,7 +59,7 @@ svg::Document renderer::MapRenderer::RenderMap(const std::set<transport::Route>&
                 .SetFillColor(render_settings.underlayer_color)
                 .SetStrokeColor(render_settings.underlayer_color)
                 .SetStrokeWidth(render_settings.underlayer_width)
-                .SetPosition(projector(stop_coordinates.at(route.stops[0])))
+                .SetPosition(projector(route.stops[0]->coordinates))
                 .SetOffset(render_settings.bus_label_offset)
                 .SetFontSize(render_settings.bus_label_font_size)
                 .SetFontFamily("Verdana")
@@ -72,7 +72,7 @@ svg::Document renderer::MapRenderer::RenderMap(const std::set<transport::Route>&
             if (!route.is_roundtrip && (route.stops[0] != route.stops[route.stops.size() / 2])) {
                 route_name = Text()
                     .SetFillColor(colors[color_num])
-                    .SetPosition(projector(stop_coordinates.at(route.stops[route.stops.size() / 2])))
+                    .SetPosition(projector(route.stops[route.stops.size() / 2]->coordinates))
                     .SetOffset(render_settings.bus_label_offset)
                     .SetFontSize(render_settings.bus_label_font_size)
                     .SetFontFamily("Verdana")
@@ -82,7 +82,7 @@ svg::Document renderer::MapRenderer::RenderMap(const std::set<transport::Route>&
                     .SetFillColor(render_settings.underlayer_color)
                     .SetStrokeColor(render_settings.underlayer_color)
                     .SetStrokeWidth(render_settings.underlayer_width)
-                    .SetPosition(projector(stop_coordinates.at(route.stops[route.stops.size() / 2])))
+                    .SetPosition(projector(route.stops[route.stops.size() / 2]->coordinates))
                     .SetOffset(render_settings.bus_label_offset)
                     .SetFontSize(render_settings.bus_label_font_size)
                     .SetFontFamily("Verdana")

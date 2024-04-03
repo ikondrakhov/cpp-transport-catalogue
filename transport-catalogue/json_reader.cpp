@@ -5,6 +5,7 @@
 #include "request_handler.h"
 
 #include <sstream>
+#include <chrono>
 
 using namespace std;
 
@@ -41,15 +42,13 @@ void JSONReader::AddRoutesToCatalogue(const json::Array& base_requests, transpor
     for (const auto& r : base_requests) {
         const auto& request = r.AsDict();
         if (request.at("type").AsString() == "Bus") {
-            std::deque<std::string> stops;
+            std::deque<const transport::Stop*> stops;
             for (const auto& stop : request.at("stops").AsArray()) {
-                stops.push_back(stop.AsString());
+                stops.push_back(&catalogue.FindStop(stop.AsString()));
             }
 
             if (!request.at("is_roundtrip").AsBool()) {
-                std::vector<std::string_view> copy(stops.begin(), stops.end() - 1);
-                std::reverse(copy.begin(), copy.end());
-                stops.insert(stops.end(), copy.begin(), copy.end());
+                stops.insert(stops.end(), stops.rbegin() + 1, stops.rend());
             }
             transport::Route r = { request.at("name").AsString(), stops, request.at("is_roundtrip").AsBool() };
             catalogue.AddRoute(r);
@@ -88,11 +87,12 @@ std::vector<json::Node> JSONReader::ProcessStatRequests(const json::Array& stat_
                                             const renderer::MapRenderer& renderer) {
     RequestHandler request_handler(catalogue, renderer);
     std::vector<json::Node> responses;
+    responses.reserve(stat_requests.size());
 
     for (const auto& request : stat_requests) {
         const std::string& type = request.AsDict().at("type").AsString();
         int request_id = request.AsDict().at("id").AsInt();
-        std::optional<json::Dict> result = json::Dict{};
+        json::Dict result = json::Dict{};
 
         if (type == "Bus") {
             result = request_handler.GetBusStat(request.AsDict().at("name").AsString());
@@ -104,15 +104,22 @@ std::vector<json::Node> JSONReader::ProcessStatRequests(const json::Array& stat_
             std::ostringstream result_map;
             auto map = renderer.RenderMap(catalogue.GetRouteList(), catalogue.GetStopsCoordinates());
             map.Render(result_map);
-            result.value()["map"] = result_map.str();
+            result["map"] = result_map.str();
+        }
+        else if (type == "Route") {
+            result = request_handler.FindShortestRoute(request.AsDict().at("from").AsString(),
+                request.AsDict().at("to").AsString());
         }
 
-        if (result.has_value()) {
-            result.value()["request_id"] = request_id;
-        }
-        responses.push_back(result.value());
+        result["request_id"] = request_id;
+        responses.push_back(result);
+
     }
     return responses;
+}
+
+void JSONReader::AddRoutingSettings(const json::Dict& routing_settings, transport::TransportCatalogue& catalogue) {
+    catalogue.InitRouter({ routing_settings.at("bus_wait_time").AsDouble(), routing_settings.at("bus_velocity").AsDouble() * 1000. / 60. });
 }
 
 void JSONReader::ProcessRequests(std::istream& input, std::ostream& output, transport::TransportCatalogue& catalogue) {
@@ -120,6 +127,7 @@ void JSONReader::ProcessRequests(std::istream& input, std::ostream& output, tran
 
     AddStopsToCatalogue(requests.AsDict().at("base_requests").AsArray(), catalogue);
     AddRoutesToCatalogue(requests.AsDict().at("base_requests").AsArray(), catalogue);
+    AddRoutingSettings(requests.AsDict().at("routing_settings").AsDict(), catalogue);
 
     renderer::MapRenderer renderer {ProcessRenderSettings(requests.AsDict().at("render_settings"))};
     std::vector<json::Node> responses = ProcessStatRequests(requests.AsDict().at("stat_requests").AsArray(), catalogue, renderer);

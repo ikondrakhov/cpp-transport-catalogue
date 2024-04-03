@@ -12,11 +12,11 @@
      RequestHandler(const transport::TransportCatalogue& db, const renderer::MapRenderer& renderer);
 
      // Возвращает информацию о маршруте (запрос Bus)
-     std::optional<std::map<std::string, json::Node>> GetBusStat(const std::string_view& bus_name) const;
+     json::Dict GetBusStat(const std::string_view& bus_name) const;
      
-     std::optional<json::Dict> GetBusesByStop(const std::string_view& stop_name) const;
+     json::Dict GetBusesByStop(const std::string_view& stop_name) const;
 
-     svg::Document RenderMap() const;
+     json::Dict FindShortestRoute(const std::string_view from, const std::string_view to) const;
 
  private:
      const transport::TransportCatalogue& db_;

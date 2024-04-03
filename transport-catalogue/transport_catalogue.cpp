@@ -8,9 +8,12 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <queue>
+#include <limits>
 
 #include "geo.h"
 #include "transport_catalogue.h"
+#include "graph.h"
 
 namespace transport {
 
@@ -18,13 +21,13 @@ namespace transport {
 
     float TransportCatalogue::ComputeCurvature(const Route& r) const {
         float distance = 0;
-        Coordinates previouse_coordinates = FindStop(std::string(r.stops[0])).coordinates;
-        for (const std::string_view stop : r.stops) {
-            Coordinates current_coordinates = FindStop(std::string(stop)).coordinates;
+        Coordinates previouse_coordinates = r.stops[0]->coordinates;
+        for (const Stop* stop : r.stops) {
+            Coordinates current_coordinates = stop->coordinates;
 
-            distance += ComputeDistance(previouse_coordinates, current_coordinates);
+distance += ComputeDistance(previouse_coordinates, current_coordinates);
 
-            previouse_coordinates = current_coordinates;
+previouse_coordinates = current_coordinates;
         }
         return this->ComputeRouteLength(r) / distance;
     }
@@ -32,15 +35,15 @@ namespace transport {
     int TransportCatalogue::ComputeRouteLength(const Route& r) const {
         int length = 0;
         for (size_t i = 0; i < r.stops.size() - 1; i++) {
-            length += FindStop(std::string(r.stops[i])).stop_to_distance.at(std::string(r.stops[i + 1]));
+            length += r.stops[i]->stop_to_distance.at(r.stops[i + 1]->name);
         }
         return length;
     }
 
     void TransportCatalogue::AddRoute(const Route& r) {
         routes_.insert(r);
-        for (const std::string& stop : r.stops) {
-            stop_buses_[stop].insert(r.name);
+        for (const transport::Stop* stop : r.stops) {
+            stop_buses_[stop->name].insert(r.name);
         }
     }
 
@@ -59,6 +62,10 @@ namespace transport {
                 name_to_stop_[stop_name].stop_to_distance[s.name] = distance;
             }
         }
+    }
+
+    void TransportCatalogue::InitRouter(transport::RoutingSettings routing_settings) {
+        transport_router_.InitRouter(this->name_to_stop_, this->routes_, routing_settings);
     }
 
     const Route& TransportCatalogue::FindRoute(const std::string_view route_name) const {
@@ -90,12 +97,16 @@ namespace transport {
         return routes_;
     }
 
-    
+
     std::map<std::string_view, Coordinates> TransportCatalogue::GetStopsCoordinates() const {
         std::map<std::string_view, Coordinates> stop_coordiantes;
-        for(const auto& [stop_name, stop]: name_to_stop_) {
+        for (const auto& [stop_name, stop] : name_to_stop_) {
             stop_coordiantes[stop_name] = stop.coordinates;
         }
         return stop_coordiantes;
+    }
+
+    std::queue<transport::RouteItem> TransportCatalogue::FindShortestRoute(const std::string_view from, const std::string_view to) const {
+        return transport_router_.FindShortestRoute(from, to);
     }
 }
