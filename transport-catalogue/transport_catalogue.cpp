@@ -25,9 +25,9 @@ namespace transport {
         for (const Stop* stop : r.stops) {
             Coordinates current_coordinates = stop->coordinates;
 
-distance += ComputeDistance(previouse_coordinates, current_coordinates);
+            distance += ComputeDistance(previouse_coordinates, current_coordinates);
 
-previouse_coordinates = current_coordinates;
+            previouse_coordinates = current_coordinates;
         }
         return this->ComputeRouteLength(r) / distance;
     }
